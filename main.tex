@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+
+\title{CPSC 490 Proposal}
+\author{Samuel Laing}
+\date{February 2019}
+
+\usepackage{natbib}
+\usepackage{graphicx}
+
+\usepackage[utf8]{inputenc}
+\usepackage[TS1,T1]{fontenc}
+\usepackage{fourier, heuristica}
+\usepackage{array, booktabs}
+\usepackage{graphicx}
+\usepackage[x11names,table]{xcolor}
+\usepackage{caption}
+\DeclareCaptionFont{blue}{\color{LightSteelBlue3}}
+
+\newcommand{\foo}{\color{LightSteelBlue3}\makebox[0pt]{\textbullet}\hskip-0.5pt\vrule width 1pt\hspace{\labelsep}}
+
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+There exist many methods for synthesizing complex waveforms. They range from basic techniques such as additive and subtractive synthesis to more complex method, such as frequency modulation (FM) synthesis. Synthesis such as these, along with (name other types of synthesis) form a set of standard synthesis types, which tend to be based upon the acoustical and physical properties of sound. Composers such as Iannis Xenakis and Gottfried Michael Koenig explored alternative types of synthesis, or nonstandard synthesis methods, expanding upon previous notions of hos complux waveforms could be created.\citep{luc2011dobereiner}
+
+\section{Stochastic Synthesis}
+(Historical background of when he presented this) GENDYN synthesizes sounds using random walks and Brownian motion to shape the waveform once a set number of breakpoints are problematically generated.(cite) (MORE) Xenakis's Dynamic Stochastic Synthesis opens up an area of micro-synthesis guided by stochastic functions
+
+\section{Existing GENDYN Extensions}
+Since Xenakis debuted stochastic synthesis with his GENDYN program, there have been many projects that have extended his work. Peter Hoffman's 'New GENDYN' program presents Xenakis' stochastic synthesis method as a tool instead of as a composition, and ... \citep{hoffman2000} In 2005, Andrew Brown presented the Interactive Dynamic Stchastic Synthesizer (IDSS)... \citep{brown2005} Luc Dobereiner's PHINGEN, or Physically Informed Stochastic Synthesis Generator, expands upon Xenakis's dynamic stochastic synthesis using a physical model instead of linear interpolation for interpolating breakpoints.\citep{lucICMC}
+
+\section{Project Direction and Timeline}
+I intend to further Xenakis' dynamic synthesis method that he introduced to the world with his GENDYN program in 1971 (site/check?).\citep{} His focus on using random walks and Brownian motion to sculpt a sound wave will be my launching point for a novel synthesis method that will attempt to incorporate his stochastic methods with a method of granular synthesis.\\
+I intend to produce my synthesis method for an existing digital music platform that will allow it to be used by artists and other sound designers for music creation. Beyond the Supercollider environment I will integrate the synthesis method into the VCV Rack platform; an open-source modular synthesizer platform that has gained popularity over the passed year (site vcv rack start date). \citep{}
+
+\begin{table}
+\renewcommand\arraystretch{1.4}\arrayrulecolor{LightSteelBlue3}
+\captionsetup{singlelinecheck=false, font=blue, labelfont=sc, labelsep=quad}
+\caption{Timeline}\vskip -1.5ex
+\begin{tabular}{@{\,}r <{\hskip 2pt} !{\foo} >{\raggedright\arraybackslash}p{8cm}}
+\toprule
+\addlinespace[1.5ex]
+Week 1 & Implement a basic version of dynamic stochastic synthesis in Supercollider as a nonrealtime process\\
+Week 2 & Apply the basic DSS implementation to a method of granular synthesis\\
+Week 4 & Implement my extended DSS algorithm as a realtime process\\
+\end{tabular}
+\end{table}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
