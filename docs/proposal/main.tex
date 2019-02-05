@@ -1,7 +1,7 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 
-\title{CPSC 490 Proposal}
+\title{Dynamic Stochastic Granular Synthesis Generator (CPSC 490 Proposal)}
 \author{Samuel Laing}
 \date{February 2019}
 
@@ -25,31 +25,52 @@
 \maketitle
 
 \section{Introduction}
-There exist many methods for synthesizing complex waveforms. They range from basic techniques such as additive and subtractive synthesis to more complex method, such as frequency modulation (FM) synthesis. Synthesis such as these, along with (name other types of synthesis) form a set of standard synthesis types, which tend to be based upon the acoustical and physical properties of sound. Composers such as Iannis Xenakis and Gottfried Michael Koenig explored alternative types of synthesis, or nonstandard synthesis methods, expanding upon previous notions of hos complux waveforms could be created.\citep{luc2011dobereiner}
+\paragraph{}
+There exist many methods for synthesizing complex waveforms. They range from basic techniques such as additive and subtractive synthesis to more complex methods, such as frequency modulation (FM) or phase modulation synthesis. Synthesis methods such as these, are generally known as standard synthesis types, which tend to be based upon the acoustical and physical properties of sound. Composers such as Iannis Xenakis and Gottfried Michael Koenig explored alternative types of synthesis, or nonstandard synthesis methods, expanding upon previous notions of how complex waveforms could be created by creating novel musical processes. \citep{luc2011dobereiner} The intent of this project is to present a novel form of sound synthesis that builds upon the techniques of stochastic synthesis and granular synthesis. The synthesis method will be built within a digital audio platform so as to maximize its artistic and experimental usability.
 
-\section{Stochastic Synthesis}
-(Historical background of when he presented this) GENDYN synthesizes sounds using random walks and Brownian motion to shape the waveform once a set number of breakpoints are problematically generated.(cite) (MORE) Xenakis's Dynamic Stochastic Synthesis opens up an area of micro-synthesis guided by stochastic functions
+\section{Background}
+\subsection{Stochastic Synthesis}
+\paragraph{}
+Stochastic processes were first used as a means for digital sound synthesis by Xenakis in his composition \textit{Polytype de Cluny} (1972), but it is his Dynamic Stochastic Synthesis method first used in \textit{La Legende d'Eer} (1977) that provided a launching point for future stochastic synthesis methods.\citep{sergio2006} The process of Dynamic Stochastic Synthesis involves the generation of several breakpoints with corresponding amplitudes, their interpolation, and their gradual evolution cycle after cycle. Xenakis's stochastic synthesis program, GENDYN, synthesizes sounds using random walks and Brownian motion to shape the waveform once a set number of breakpoints are probalistically generated.\citep{xenakis1992} Xenakis's Dynamic Stochastic Synthesis opens up an area of sound synthesis to exploration that focuses on the guided micro-manipulation of waveforms by mean of stochastic functions.
 
-\section{Existing GENDYN Extensions}
-Since Xenakis debuted stochastic synthesis with his GENDYN program, there have been many projects that have extended his work. Peter Hoffman's 'New GENDYN' program presents Xenakis' stochastic synthesis method as a tool instead of as a composition, and ... \citep{hoffman2000} In 2005, Andrew Brown presented the Interactive Dynamic Stchastic Synthesizer (IDSS)... \citep{brown2005} Luc Dobereiner's PHINGEN, or Physically Informed Stochastic Synthesis Generator, expands upon Xenakis's dynamic stochastic synthesis using a physical model instead of linear interpolation for interpolating breakpoints.\citep{lucICMC}
+\subsection{Existing Stochastic Synthesis Extensions}
+\paragraph{}
+Since Xenakis debuted the method of dynamic stochastic synthesis, there have been many projects that have extended his work. Peter Hoffman's 'New GENDYN' program presents Xenakis' stochastic synthesis method as a tool instead of as a composition, and encapsulated the synthesis method in an experimental tool.\citep{hoffman2000} In 2005, Andrew Brown presented the Interactive Dynamic Stchastic Synthesizer (IDSS), a tool that allowed for experimentation with stochastic synthesis through interactive parameterization.\citep{brown2005} Luc Dobereiner's PHINGEN, or Physically Informed Stochastic Synthesis Generator, expands upon Xenakis's dynamic stochastic synthesis by using a physical model instead of linear interpolation for interpolating breakpoints.\citep{lucICMC} This project will proceed in a direction similar to PHINGEN by altering the method of interpolating the breakpoints produced by the stochastic synthesis method. Instead of replacing linear interpolation with a physical model, however, the process will employ a granular synthesis sub-system.
 
 \section{Project Direction and Timeline}
-I intend to further Xenakis' dynamic synthesis method that he introduced to the world with his GENDYN program in 1971 (site/check?).\citep{} His focus on using random walks and Brownian motion to sculpt a sound wave will be my launching point for a novel synthesis method that will attempt to incorporate his stochastic methods with a method of granular synthesis.\\
-I intend to produce my synthesis method for an existing digital music platform that will allow it to be used by artists and other sound designers for music creation. Beyond the Supercollider environment I will integrate the synthesis method into the VCV Rack platform; an open-source modular synthesizer platform that has gained popularity over the passed year (site vcv rack start date). \citep{}
+\paragraph{}
+I intend to further Xenakis' Dynamic Stochastic Synthesis, specifically the version that he used in his GENDYN program. This extension will be based upon substituting the linear interpolation of the breakpoints that are stochastically generated with a granular synthesis sub-system. The resulting process will be a hybrid Dynamic Stochastic Granular Synthesis Generator (DSGSG). Furthermore, the stochastic synthesis will serve as the generator and supplier of sonic material for the granular synthesis stage.
+\paragraph{}
+Once my DSGSG system is functional, I will integrate the synthesis method for an existing digital music platform that will allow it to be used by artists and other sound designers for music creation. Beyond the Supercollider environment I will integrate the synthesis method into the VCV Rack platform; an open-source modular synthesizer platform that has gained popularity since its release in 2016. Table 1 outlines a timeline of how the project will progress.\citep{vcvrack}
 
-\begin{table}
+\begin{table}[htb]
 \renewcommand\arraystretch{1.4}\arrayrulecolor{LightSteelBlue3}
 \captionsetup{singlelinecheck=false, font=blue, labelfont=sc, labelsep=quad}
 \caption{Timeline}\vskip -1.5ex
 \begin{tabular}{@{\,}r <{\hskip 2pt} !{\foo} >{\raggedright\arraybackslash}p{8cm}}
 \toprule
 \addlinespace[1.5ex]
-Week 1 & Implement a basic version of dynamic stochastic synthesis in Supercollider as a nonrealtime process\\
-Week 2 & Apply the basic DSS implementation to a method of granular synthesis\\
-Week 4 & Implement my extended DSS algorithm as a realtime process\\
+02/07-02/20 (Week 1-2) & Implement a basic version of Dynamic Stochastic Granular Synthesis Generator (DSGSG) in Supercollider as a nonrealtime process (finalize method of synthesis)\\
+02/21-03/08 (Week 3-4) & Implement the DSGSG algorithm as a realtime process as a Supercollider Unit Generator\\
+03/09-03/23 (Week 5-6) & Refine the realtime process and stochastic feedback method for more favorable sonic results.\\
+03/24-04/14 (Week 7-9) & Implement DSGSG as a VCV Rack modular, focusing on the use of DSGSG as a musical and artistic sound design tool.\\
+04/15-04/25 (Week 10-11) & Refine any stray aspects of the project, finalize VCV Rack module, and begin project write up.\\
+04/26-05/02 (Week 11-12) & Final write up, make video demo, and  project submission
 \end{tabular}
 \end{table}
 
+\section{Deliverables}
+Below is a list of deliverables to be expected from this project. 
+
+\begin{enumerate}
+    \item A nonrealtime implementation of the Dynamic Stochastic Granular Synthesis Generator implemented in Supercollider.
+    \item A realtime implementation of DSGSG as a Supercollider Unit Generator (to be written in c++).
+    \item An adaptation of the DSGSG to a VCV Rack module that emphasizes the synthesis method's possibility as an instrument.
+    \item A paper outlining the DSGSG synthesis method and assessing its viability as a novel synthesis method.
+    \item A video demoing both the Supercollider and VCV Rack implementations; highlighting their uses as instruments and means for sonic experimentation.
+\end{enumerate}
+
+\pagebreak
 \bibliographystyle{plain}
 \bibliography{references}
 \end{document}
