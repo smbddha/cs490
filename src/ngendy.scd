@@ -12,12 +12,31 @@
              stochastic function ?
           2. generate amplitudes for those breakpoints
           3. interpolate between those breakpoints
+
+| IDEAS :
+|  1. Granular stochastic synthesis
+|    - basically granular synthesis controlled by stochastic control values
+|      using the granular synthesis part as a means of interpolation between
+|      the stochastically generated values
+|
+|  2. Stochastic synthesis ? echo ?
+|    - sort of vanilla stochastic synthesis, but applied to an input waveform
+|      seems like have stochastic synthesis generate an entirely novel waveform
+|      can lead to very *noise-like* waves, but what if it were to stochastically
+|      "decompose" an input wave that could be anything. It would select bpts for
+|      the input wave and then adjust them creating a new wave in the process, but
+|      would likely keep some semblance to the original wave/sound.
 |
 */
 
 (
 ~max_amp = 0.7;
 
+/*
+| utility function to interpolate a list of breakpoints into a wave
+|
+| @param pts : an array float tuples (amp, dur)
+*/
 ~toWave = {|pts|
 	var w = Array.new();
 	(pts.size - 1).do({|i|
@@ -124,8 +143,29 @@
 	});
 	wave
 };
-
+h
 ~wave = ~ngendy.()
+)
+
+(
+~granny = {
+	arg in;
+
+	/*
+	| Generate the source material, for now lets use an
+	| fm modulated sine wave ?
+	*/
+
+}
+)
+
+(
+~gendy_echo = {
+	arg in_wave; // a float array of the input waveform, should be s single cycle ?
+
+
+	/* select breakpoints in the */
+};
 )
 
 ~pg = Pgbrown.new(lo: 0, hi: 1, step: 0.525, length: inf);
@@ -134,6 +174,9 @@
 
 ~wave.plot;
 ~wave.size
+
+{SinOsc.ar(440, mul: 0.2) + Line.ar(0,1,5)}.play;
+s.scope
 
 (
 a = ~wave; // 5 seconds of noise
