@@ -21,7 +21,7 @@
 ~toWave = {|pts|
 	var w = Array.new();
 	(pts.size - 1).do({|i|
-		w = w ++ [pts@@i@@0, pts@@(i+1)@@0].resize(pts@@(i+1)@@1);
+		w = w ++ [pts@@i@@0, pts@@(i+1)@@0].resize(pts@@(i+1)@@1, 'quad');
 	});
 	w
 };
@@ -33,13 +33,13 @@
 ~ngendy = {
 	arg
 	s = 5, // # of seconds to generate
-	n_bpts=5, // # of breakpoints
+	n_bpts=4, // # of breakpoints
 	min_freq=300, // min freq...
 	max_freq=1000, // max...
 	samp_rate=44800; // higher samp rate could lead to more bpts + higher freq
 
 	var bpts, amps, period, d, prev, wave, rwave, wc1, wc2,
-	min_samp, max_samp, prim_bars, seco_bars, amp_bars;
+	min_samp, max_samp, prim_bars, seco_bars, amp_bars, mot_strms;
 
 	max_samp = samp_rate / min_freq;
 	min_samp = samp_rate / max_freq;
@@ -62,7 +62,28 @@
 	| Generate initial points
 	*/
 	wc1 = 12.collect({|i|
-		[rrand(~max_amp * -1, ~max_amp), rrand(seco_bars@@0, seco_bars@@1)]
+		var amp_gen, dur_gen;
+
+		amp_gen = Pgbrown.new(~max_amp * -1, ~max_amp, step: 0.125).asStream;
+		dur_gen = Pgbrown.new(seco_bars@@0, seco_bars@@1, step: 2).asStream;
+
+		/*
+		Using brownian motion random number generators
+
+		FORMAT
+		  [
+		    amplitude,
+		    duration,
+		    amplitude walk rand # generator,
+		    duration walk rand # generator
+		  ]
+		*/
+		[
+			amp_gen.next,
+			dur_gen.next,
+			amp_gen,
+			dur_gen
+		]
 	});
 
 	wave = wave ++ ~toWave.(wc1);
@@ -77,17 +98,21 @@
 		*/
 
 		wc2 = wc1.collect({|ad, i|
-			var a,d;
-			a = ad@@0; d = ad@@1;
+			var a,d, amp_gen, dur_gen;
+			a = ad@@0; d = ad@@1; amp_gen = ad@@2; dur_gen = ad@@3;
 
 			/*
 			| TODO
 			| Use specific probability distributions in the selection of
 			| duration and amplitude movement
 			*/
-			a = (a + rrand(amp_bars@@0, amp_bars@@1)).wrap(-1 * ~max_amp, ~max_amp);
-			d = (d + rrand(prim_bars@@0, prim_bars@@1)).wrap(seco_bars@@0, seco_bars@@1);
-			[a,d]
+
+			/* The old way */
+			//a = (a + rrand(amp_bars@@0, amp_bars@@1)).wrap(-1 * ~max_amp, ~max_amp);
+			//d = (d + rrand(prim_bars@@0, prim_bars@@1)).wrap(seco_bars@@0, seco_bars@@1);
+
+			/* The new way */
+			[amp_gen.next, dur_gen.next, amp_gen, dur_gen]
 		});
 
 		/*
@@ -103,6 +128,10 @@
 ~wave = ~ngendy.()
 )
 
+~pg = Pgbrown.new(lo: 0, hi: 1, step: 0.525, length: inf);
+~pgs = ~pg.asStream;
+~pgs.next;
+
 ~wave.plot;
 ~wave.size
 
@@ -112,5 +141,5 @@ b = Buffer.loadCollection(s, a);
 )
 
 // play it
-x = { PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 0) * 0.5 }.play;
-b.free; x.free;'
+x = { PlayBuf.ar(1, b, BufRateScale.kr(b) * Line.kr(0.1, 0.7, 3), loop: 1) * 0.5 }.play;
+b.free; x.free;
