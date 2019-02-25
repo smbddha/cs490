@@ -51,8 +51,8 @@
 */
 ~ngendy = {
 	arg
-	s = 5, // # of seconds to generate
-	n_bpts=4, // # of breakpoints
+	s = 10, // # of seconds to generate
+	n_bpts=6, // # of breakpoints
 	min_freq=300, // min freq...
 	max_freq=1000, // max...
 	samp_rate=44800; // higher samp rate could lead to more bpts + higher freq
@@ -80,7 +80,7 @@
 	/*
 	| Generate initial points
 	*/
-	wc1 = 12.collect({|i|
+	wc1 = n_bpts.collect({|i|
 		var amp_gen, dur_gen;
 
 		amp_gen = Pgbrown.new(~max_amp * -1, ~max_amp, step: 0.125).asStream;
@@ -143,7 +143,7 @@
 	});
 	wave
 };
-h
+
 ~wave = ~ngendy.()
 )
 
@@ -184,5 +184,5 @@ b = Buffer.loadCollection(s, a);
 )
 
 // play it
-x = { PlayBuf.ar(1, b, BufRateScale.kr(b) * Line.kr(0.1, 0.7, 3), loop: 1) * 0.5 }.play;
+x = { PlayBuf.ar(1, b, BufRateScale.kr(b) *0.3, loop: 1) * 0.5 }.play;
 b.free; x.free;
