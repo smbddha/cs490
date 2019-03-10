@@ -30,6 +30,13 @@
 */
 
 (
+w = Window("My Analyzer", Rect(0, 0, 511, 300));
+f = FreqScopeView(w, w.view.bounds);
+w.onClose_({ f.kill }); // YOU MUST HAVE THIS
+w.front;
+)
+
+(
 ~max_amp = 0.7;
 
 /*
@@ -147,6 +154,87 @@
 ~wave = ~ngendy.()
 )
 
+
+
+(
+~ngendy2 = {
+	arg n_bpts, min_freq=30, max_freq=1000, samp_rate = 48000;
+
+	/*
+	| Create sonic material for granular part
+	*/
+
+	Routine {
+
+		var mAmps, mDurs, mOffs, mAmpRands, mDurRands, mOffRands, phase, amp, amp_next,
+		amp_out, speed, index, seco_bars, max_samp, min_samp, rate;
+
+		max_samp = samp_rate / min_freq;
+		min_samp = samp_rate / max_freq;
+
+		seco_bars = [min_samp, max_samp] / n_bpts;
+
+		// have a different way of seeding the inital amp and dur arrays
+		phase = 1.0; amp = 0.0; amp_next = 0.0;
+		mAmpRands = Array.fill(n_bpts, {Pgbrown.new(~max_amp * -1, ~max_amp, step: 0.025).asStream});
+		mDurRands = Array.fill(n_bpts, {Pgbrown.new(0.4, 0.7, step: 2).asStream});
+		mAmps = Array.fill(n_bpts, {|i| mAmpRands[i].next });
+		mDurs = Array.fill(n_bpts, {|i| mDurRands[i].next });
+
+		index = 0;
+		inf.do({
+
+			if (phase >= 1.0, // then move to the next point
+				{
+					phase = phase - 1.0;
+
+					// get the next amplitude
+					amp = amp_next;
+					index = (index+1).mod(n_bpts);
+					amp_next = mAmpRands[index].next;
+					mAmps[index] = amp_next;
+
+					rate = mDurRands[index].next;
+					mDurs[index] = rate;
+
+					speed = max_freq - min_freq * rate + min_freq * (1 / 48000) * n_bpts;
+
+					//["NEXT AMP: ", amp_next, "PHASE", phase, "SPEED", speed].postln;
+				}
+			);
+
+			/*
+			| otherwise just continue interpolating between points
+			| TODO
+			| add other types of interpolation besides linear
+			*/
+			amp_out = (1.0 - phase * amp) + (phase * amp_next);
+			phase = phase + speed;
+
+			/*
+			| TODO
+			| implement granular means of interpolation here
+			*/
+
+
+			// yield the amplitude
+			amp_out.yield;
+		});
+	}
+}
+)
+
+~x = ~ngendy2.(12);
+~w = ~x.asStream();
+~w.reset;
+~w.next
+
+~wave = 1000000.collect({~w.next});
+~wave.plot
+
+1000.collect({~w.next}).plot
+
+(((1000 - 200 * 0.9) + 200) * (1 / 48000)) * 12
 (
 ~granny = {
 	arg in;
@@ -184,5 +272,5 @@ b = Buffer.loadCollection(s, a);
 )
 
 // play it
-x = { PlayBuf.ar(1, b, BufRateScale.kr(b) *0.3, loop: 1) * 0.5 }.play;
+x = { PlayBuf.ar(1, b, BufRateScale.kr(b) * 0.3, loop: 0) * 0.5 }.play;
 b.free; x.free;

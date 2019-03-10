@@ -1,0 +1,3 @@
+[submodule "SGDSS"]
+	path = SGDSS
+	url = https://github.com/smbddha/SGDSS.git
