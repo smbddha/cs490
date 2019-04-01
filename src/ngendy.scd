@@ -157,16 +157,83 @@ w.front;
 
 
 (
+/* ------------------------------------------------------------------
+ * |
+ * | IMPLEMENTATION W/ GRANULAR FEATURE
+ * |
+ * -----------------------------------------------------------------*/
+~interpolate = {
+	arg type=\lin, amps, durs, min_freq=30, max_freq=1000, samp_rate = 48000;
+
+	var index, phase, out, amp, amp_next, speed, n_bpts, amp_out, rate;
+
+	out = Array.new();
+
+	n_bpts = amps.size;
+	index=0; phase = 1.0;
+	amp = 0.0; amp_next = 0.0;
+	while ({ index < amps.size }, {
+		if (phase >= 1.0, {
+			phase = phase - 1.0;
+
+			// get the next amplitude
+			amp = amp_next;
+			index = index+1;
+
+			if (index < amps.size, {
+				amp_next = amps[index];
+				rate = durs[index];
+			}, {
+				amp_next = 0.0;
+				rate = 1.0;
+			});
+
+			speed = max_freq - min_freq * rate + min_freq * (1 / samp_rate) * n_bpts;
+
+			index.postln;
+		});
+
+		switch (type,
+			\lin, {
+				// simple linear interpolation
+				amp_out = (1.0 - phase * amp) + (phase * amp_next);
+			},
+			\gran, {
+				// granular interpolation (also linear too)
+				/*
+				var a,an;
+				[i_env, i_env_next, env[i_env], env_next[i_env_next]].postln;
+				a = amp * env[i_env] * samp[off];
+				an = amp_next * env_next[i_env_next] * samp[off_next];
+				amp_out = (1.0 - phase * a) + (phase * an)
+				*/
+			},
+			{}
+		);
+		phase = phase + speed;
+		out = out.add(amp_out);
+		out.postln;
+	});
+	out
+};
+
+~max_amp = 0.7;
+~gINTPOL_VAL = 1;
 ~ngendy2 = {
 	arg n_bpts, min_freq=30, max_freq=1000, samp_rate = 48000;
+
+	var samp;
 
 	/*
 	| Create sonic material for granular part
 	*/
+	samp = Wavetable.sineFill(1024, [1]);
 
 	Routine {
 
-		var mAmps, mDurs, mOffs, mAmpRands, mDurRands, mOffRands, phase, amp, amp_next,
+		var mAmps, mDurs, mOffs, mAmpRands, mDurRands, mOffRands, phase,
+		amp, amp_next, env, env_next, i_env, i_env_next,
+		off, off_next,
 		amp_out, speed, index, seco_bars, max_samp, min_samp, rate;
 
 		max_samp = samp_rate / min_freq;
@@ -175,29 +242,55 @@ w.front;
 		seco_bars = [min_samp, max_samp] / n_bpts;
 
 		// have a different way of seeding the inital amp and dur arrays
-		phase = 1.0; amp = 0.0; amp_next = 0.0;
+		phase = 1.0;
+		amp = 0.0; amp_next = 0.0;
+		i_env = 0; i_env_next = 0.5;
+		off = 0;   off_next = 0;
+		env = Env.new(); env_next = Env.new();
+
 		mAmpRands = Array.fill(n_bpts, {Pgbrown.new(~max_amp * -1, ~max_amp, step: 0.025).asStream});
 		mDurRands = Array.fill(n_bpts, {Pgbrown.new(0.4, 0.7, step: 2).asStream});
+		mOffRands = Array.fill(n_bpts, {Pgbrown.new(0,1024, step: 5).asStream});
+
 		mAmps = Array.fill(n_bpts, {|i| mAmpRands[i].next });
 		mDurs = Array.fill(n_bpts, {|i| mDurRands[i].next });
+		mOffs = Array.fill(n_bpts, {|i| mOffRands[i].next });
+
+		"BOUTTA INTERPOLATE".postln;
+		~interpolate.(\lin, mAmps, mDurs).plot;
 
 		index = 0;
 		inf.do({
-
 			if (phase >= 1.0, // then move to the next point
 				{
 					phase = phase - 1.0;
 
 					// get the next amplitude
 					amp = amp_next;
+
+					// swap envs
+					env = env_next;
+
 					index = (index+1).mod(n_bpts);
+
 					amp_next = mAmpRands[index].next;
 					mAmps[index] = amp_next;
+
+					// how to read through the grain envelope at the
+					// correct speed ...m
+					env_next = Env.new([0,1,0], [0.5,0.5], curve: \sin);
+
+					off = off_next;
+					off_next = mOffRands[index].next;
+					mOffs[index] = off_next;
+
+					i_env = i_env_next;
+					i_env_next = 0.0;
 
 					rate = mDurRands[index].next;
 					mDurs[index] = rate;
 
-					speed = max_freq - min_freq * rate + min_freq * (1 / 48000) * n_bpts;
+					speed = max_freq - min_freq * rate + min_freq * (1 / samp_rate) * n_bpts;
 
 					//["NEXT AMP: ", amp_next, "PHASE", phase, "SPEED", speed].postln;
 				}
@@ -208,14 +301,31 @@ w.front;
 			| TODO
 			| add other types of interpolation besides linear
 			*/
-			amp_out = (1.0 - phase * amp) + (phase * amp_next);
+
+			amp_out = 0.0;
+			switch (~gINTPOL_VAL,
+				0, {
+					// simple linear interpolation
+					amp_out = (1.0 - phase * amp) + (phase * amp_next);
+				},
+				1, {
+					// granular interpolation (also linear too)
+					var a,an;
+					[i_env, i_env_next, env[i_env], env_next[i_env_next]].postln;
+					a = amp * env[i_env] * samp[off];
+					an = amp_next * env_next[i_env_next] * samp[off_next];
+					amp_out = (1.0 - phase * a) + (phase * an)
+				},
+				{}
+			);
+
 			phase = phase + speed;
 
-			/*
-			| TODO
-			| implement granular means of interpolation here
-			*/
+			i_env = i_env + (speed/2);
+			i_env_next = i_env_next + (speed/2);
 
+			off = (off + 1).mod(1024);
+			off_next = (off_next + 1).mod(1024);
 
 			// yield the amplitude
 			amp_out.yield;
@@ -224,14 +334,56 @@ w.front;
 }
 )
 
+Env.new(curve: \sin)[0.2];
+
+(
+/* VISUALS FOR TESTING PURPOSES */
+var w, txt, size = 36;
+w = Window.new("Knobs", Rect(400,400,250,100)).front;
+w.acceptsMouseOver=true;
+w.view.decorator = FlowLayout(w.view.bounds).gap_(10 @ 10).margin_(10 @10);
+txt = StaticText(w, 200 @ 14);
+w.view.decorator.nextLine;
+
+k = Knob(w, size @ size);
+k.action = {arg v,x,y;  v.value.postln; txt.string_("value: " ++ v.value); };
+k.mouseOverAction = {|v| txt.string_("value: " ++ v.value); };
+
+j = Knob(w, size @ size);
+j.action = {arg v,x,y;  j.value.postln; txt.string_("value: " ++ v.value); };
+j.mouseOverAction = { txt.string_("value: " ++ j.value); };
+
+n = NumberBox(w, 100 @ 20);
+//n.setProperty(\boxColor,Color.grey(alpha:0.0));
+n.value = 0.0;
+
+)
+
+(
 ~x = ~ngendy2.(12);
+)
+(
 ~w = ~x.asStream();
 ~w.reset;
 ~w.next
-
-~wave = 1000000.collect({~w.next});
+)
+~wave = 40.collect({~w.next});
 ~wave.plot
 
+
+(
+w = Window("plot panel", Rect(20, 30, 520, 450));
+Slider.new(w, Rect(10, 10, 490, 20)).resize_(2).action_ { |v|
+    a.value = (0..(v.value.linexp(0, 1, 5, 8000)).asInteger).scramble;
+    w.refresh;
+};
+z = CompositeView(w, Rect(10, 35, 490, 400)).background_(Color.rand(0.7)).resize_(5);
+a = Plotter("plot", parent: z).value_([0, 1, 2, 3, 4].scramble * 100);
+w.front;
+)
+
+~a = Pgbrown.new(0.4, 0.7, step: 2).asStream;
+~a.next
 1000.collect({~w.next}).plot
 
 (((1000 - 200 * 0.9) + 200) * (1 / 48000)) * 12
@@ -255,6 +407,8 @@ w.front;
 	/* select breakpoints in the */
 };
 )
+~x = Pgbrown.new(0,1024, step:5, length:inf).asStream
+~x.next
 
 ~pg = Pgbrown.new(lo: 0, hi: 1, step: 0.525, length: inf);
 ~pgs = ~pg.asStream;
