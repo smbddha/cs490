@@ -189,8 +189,6 @@ w.front;
 			});
 
 			speed = max_freq - min_freq * rate + min_freq * (1 / samp_rate) * n_bpts;
-
-			index.postln;
 		});
 
 		switch (type,
@@ -218,9 +216,10 @@ w.front;
 };
 
 ~max_amp = 0.7;
-~gINTPOL_VAL = 1;
+
 ~ngendy2 = {
-	arg n_bpts, min_freq=30, max_freq=1000, samp_rate = 48000;
+	arg n_bpts, interpolate=\lin, min_freq=30, max_freq=1000, samp_rate = 48000,
+	f; // for testing shit
 
 	var samp;
 
@@ -234,7 +233,8 @@ w.front;
 		var mAmps, mDurs, mOffs, mAmpRands, mDurRands, mOffRands, phase,
 		amp, amp_next, env, env_next, i_env, i_env_next,
 		off, off_next,
-		amp_out, speed, index, seco_bars, max_samp, min_samp, rate;
+		amp_out, speed, index, seco_bars, max_samp, min_samp, rate,
+		wave;
 
 		max_samp = samp_rate / min_freq;
 		min_samp = samp_rate / max_freq;
@@ -256,8 +256,8 @@ w.front;
 		mDurs = Array.fill(n_bpts, {|i| mDurRands[i].next });
 		mOffs = Array.fill(n_bpts, {|i| mOffRands[i].next });
 
-		"BOUTTA INTERPOLATE".postln;
-		~interpolate.(\lin, mAmps, mDurs).plot;
+		// use to gather single waveforms
+		wave = Array.new();
 
 		index = 0;
 		inf.do({
@@ -271,6 +271,7 @@ w.front;
 					// swap envs
 					env = env_next;
 
+					if (index == 0, {f.(wave); wave = Array.new()});
 					index = (index+1).mod(n_bpts);
 
 					amp_next = mAmpRands[index].next;
@@ -303,12 +304,12 @@ w.front;
 			*/
 
 			amp_out = 0.0;
-			switch (~gINTPOL_VAL,
-				0, {
+			switch (interpolate,
+				\lin, {
 					// simple linear interpolation
 					amp_out = (1.0 - phase * amp) + (phase * amp_next);
 				},
-				1, {
+				\gran, {
 					// granular interpolation (also linear too)
 					var a,an;
 					[i_env, i_env_next, env[i_env], env_next[i_env_next]].postln;
@@ -326,6 +327,8 @@ w.front;
 
 			off = (off + 1).mod(1024);
 			off_next = (off_next + 1).mod(1024);
+
+			wave = wave.add(amp_out);
 
 			// yield the amplitude
 			amp_out.yield;
@@ -372,21 +375,41 @@ n.value = 0.0;
 
 
 (
-w = Window("plot panel", Rect(20, 30, 520, 450));
-Slider.new(w, Rect(10, 10, 490, 20)).resize_(2).action_ { |v|
-    a.value = (0..(v.value.linexp(0, 1, 5, 8000)).asInteger).scramble;
-    w.refresh;
-};
-z = CompositeView(w, Rect(10, 35, 490, 400)).background_(Color.rand(0.7)).resize_(5);
+/* ------------------------------------------------------------------
+ * |
+ * | VISUAL TESTING PANEL
+ * |
+ * -----------------------------------------------------------------*/
+var k_size = 36;
+
+w = Window("ngendy testing", Rect(0, 0, 880, 540));
+
+k = Knob(w, k_size @ k_size);
+
+z = CompositeView(w, Rect(440, 10, 430, 250)).background_(Color.rand(0.7)).resize_(5);
 a = Plotter("plot", parent: z).value_([0, 1, 2, 3, 4].scramble * 100);
 w.front;
+
+r = Routine {
+	var gen;
+
+	gen = ~ngendy2.(10, f: { |wave|
+		"full wave".postln;
+		wave.postln;
+		if(wave.size > 0, {a.value_(wave)});
+	});
+
+	inf.do({
+		gen.next;
+		0.0005.wait;
+	});
+};
+
+r.play(AppClock);
+
 )
 
-~a = Pgbrown.new(0.4, 0.7, step: 2).asStream;
-~a.next
-1000.collect({~w.next}).plot
 
-(((1000 - 200 * 0.9) + 200) * (1 / 48000)) * 12
 (
 ~granny = {
 	arg in;
