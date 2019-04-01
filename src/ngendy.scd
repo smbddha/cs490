@@ -309,12 +309,17 @@ w.front;
 					// simple linear interpolation
 					amp_out = (1.0 - phase * amp) + (phase * amp_next);
 				},
+				\cos, {
+					var x;
+					x = 1 - (phase * pi).cos / 2;
+					amp_out = amp * (1 - x) + (amp_next * x);
+				},
 				\gran, {
 					// granular interpolation (also linear too)
 					var a,an;
 					[i_env, i_env_next, env[i_env], env_next[i_env_next]].postln;
-					a = amp * env[i_env] * samp[off];
-					an = amp_next * env_next[i_env_next] * samp[off_next];
+					a = amp + (env[i_env] * samp[off]);
+					an = amp_next + (env_next[i_env_next] * samp[off_next]);
 					amp_out = (1.0 - phase * a) + (phase * an)
 				},
 				{}
@@ -338,7 +343,7 @@ w.front;
 )
 
 Env.new(curve: \sin)[0.2];
-
+(pi).cos()
 (
 /* VISUALS FOR TESTING PURPOSES */
 var w, txt, size = 36;
@@ -393,7 +398,9 @@ w.front;
 r = Routine {
 	var gen;
 
-	gen = ~ngendy2.(10, f: { |wave|
+	gen = ~ngendy2.(2,
+		interpolate: \gran,
+		f: { |wave|
 		"full wave".postln;
 		wave.postln;
 		if(wave.size > 0, {a.value_(wave)});
