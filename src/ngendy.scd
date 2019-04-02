@@ -226,7 +226,7 @@ w.front;
 	/*
 	| Create sonic material for granular part
 	*/
-	samp = Wavetable.sineFill(1024, [1]);
+	samp = Wavetable.sineFill(1024, [1,0.5,0.25,0.5],[0,0,0.2,0.5]);
 
 	Routine {
 
@@ -271,7 +271,7 @@ w.front;
 					// swap envs
 					env = env_next;
 
-					if (index == 0, {f.(wave); wave = Array.new()});
+					if (index == 0 && f.isNil.not, {f.(wave); wave = Array.new()});
 					index = (index+1).mod(n_bpts);
 
 					amp_next = mAmpRands[index].next;
@@ -316,11 +316,13 @@ w.front;
 				},
 				\gran, {
 					// granular interpolation (also linear too)
-					var a,an;
-					[i_env, i_env_next, env[i_env], env_next[i_env_next]].postln;
+					var a,an, x;
 					a = amp + (env[i_env] * samp[off]);
 					an = amp_next + (env_next[i_env_next] * samp[off_next]);
-					amp_out = (1.0 - phase * a) + (phase * an)
+					//amp_out = (1.0 - phase * a) + (phase * an)
+
+					x = 1 - (phase * pi).cos / 2;
+					amp_out = a * (1 - x) + (an * x);
 				},
 				{}
 			);
@@ -368,14 +370,14 @@ n.value = 0.0;
 )
 
 (
-~x = ~ngendy2.(12);
+~x = ~ngendy2.(22, interpolate: \gran);
 )
 (
 ~w = ~x.asStream();
 ~w.reset;
 ~w.next
 )
-~wave = 40.collect({~w.next});
+~wave = 400000.collect({~w.next});
 ~wave.plot
 
 
@@ -398,7 +400,7 @@ w.front;
 r = Routine {
 	var gen;
 
-	gen = ~ngendy2.(2,
+	gen = ~ngendy2.(22,
 		interpolate: \gran,
 		f: { |wave|
 		"full wave".postln;
@@ -408,7 +410,7 @@ r = Routine {
 
 	inf.do({
 		gen.next;
-		0.0005.wait;
+		0.005.wait;
 	});
 };
 
@@ -456,5 +458,5 @@ b = Buffer.loadCollection(s, a);
 )
 
 // play it
-x = { PlayBuf.ar(1, b, BufRateScale.kr(b) * 0.3, loop: 0) * 0.5 }.play;
+x = { RLPF.ar(PlayBuf.ar(1, b, BufRateScale.kr(b) * 0.6, loop: 0) * 0.5, MouseX.kr(300, 2000)) }.play;
 b.free; x.free;
