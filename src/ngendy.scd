@@ -371,7 +371,7 @@ clip2(-0.1,0.7)
  * | VISUAL TESTING PANEL
  * |
  * -----------------------------------------------------------------*/
-var k_size = 36;
+var curr_routine, gen_wave, n_samples, k_size = 36;
 
 ~interpolation_val = \lin;
 
@@ -423,9 +423,56 @@ n = EZListView.new(
 );
 
 b = Button(w, Rect(20, 20, 80, 26))
-.states_([["play", Color.black, Color.red]])
-.action_({ arg butt, mod;
-	~run_gendy.(i_val: ~interpolation_val);
+.states_([
+	["run", Color.black, Color.red],
+	["stop", Color.black, Color.green]
+])
+.action_({
+	arg b, mod;
+	b.value.postln;
+	switch (b.value,
+		1, {
+			"run pressed".postln;
+			~run_gendy.(i_val: ~interpolation_val, w: 0.001);
+			b.value = 1;
+		},
+		0, {
+			"stop pressed".postln;
+			(curr_routine.isNil.not).if { curr_routine.stop } {};
+			b.value = 0;
+	});
+});
+
+g = EZNumber(w,        // parent
+	150@20,   // bounds
+	" test ", // label
+	ControlSpec.new(44800, 2000000),    // controlSpec
+	{ |ez| n_samples = ez.value }, // action
+	330,      // initValue
+	true      // initAction
+);
+g.setColors(Color.grey,Color.white);
+
+c = Button(w, Rect(20, 20, 80, 26))
+.states_([
+	["play", Color.white, Color.blue],
+])
+.action_({
+	arg b, mod;
+	var buf;
+	"playing stored wave".postln;
+	buf = Buffer.loadCollection(s, gen_wave, action: {
+		{ RLPF.ar(PlayBuf.ar(1, buf, BufRateScale.kr(buf) * 0.6, loop: 0) * 0.5, MouseX.kr(300, 2000)) }.play
+	});
+});
+
+d = Button(w, Rect(20, 20, 80, 26))
+.states_([
+	["gennn", Color.black, Color.green],
+])
+.action_({
+	arg b, mod;
+	~run_gendy.(i_val: ~interpolation_val, n: n_samples);
 });
 
 z = CompositeView(w, Rect(440, 10, 430, 250)).background_(Color.rand(0.7)).resize_(5);
@@ -433,53 +480,43 @@ a = Plotter("plot", parent: z).value_([0, 1, 2, 3, 4].scramble * 100);
 w.front;
 
 ~run_gendy = {
-	arg i_val;
+	arg i_val, w=0, n=inf;
 
-	var rt;
-	rt = Routine {
-		var gen;
+	curr_routine = Routine {
+		var gen, wave;
 
 		gen = ~ngendy2.(22,
 			interpolate: i_val,
 			f: { |wave|
-				"full wave".postln;
-				wave.postln;
+				//"full wave".postln;
+				//wave.postln;
 				if(wave.size > 0, {a.value_(wave)});
 		});
 
-		inf.do({
-			gen.next;
-			0.005.wait;
+		gen_wave = Array.new();
+		n.do({
+			gen_wave = gen_wave.add(gen.next);
+			(w > 0).if {w.wait;};
 		});
 	};
-	rt.play(AppClock);
+	curr_routine.play(AppClock);
 };
 
 )
-
 (
-s.waitForBoot({
-    w = Window.new;
-    b = Button(w, Rect(20, 20, 80, 26))
-            .states_([["play", Color.black, Color.rand]])
-            .mouseDownAction_({
-                a = {EnvGen.kr(Env.adsr, doneAction: Done.freeSelf) * SinOsc.ar(440, 0, 0.4)}.play;
-            })
-            .action_({ arg butt, mod;
-                a.release(0.3);
-            });
-    w.front;
-})
-)
+w = Window.new.front;
+g = EZNumber(w,        // parent
+             150@20,   // bounds
+             " test ", // label
+             \freq,    // controlSpec
+             { |ez| (ez.value.asString ++" is the value of " ++ ez).postln }, // action
+             330,      // initValue
+             true      // initAction
+);
+g.setColors(Color.grey,Color.white);
+);
 
-(
-w = Window("EZKnob", Rect(380,400,300,180)).front;
-w.view.decorator = FlowLayout(w.view.bounds);
-k = EZKnob(w, 42 @ 74, "Knob", action: { arg knb; knb.value.postln; }, margin:2@2, labelHeight:16);
-k.view.background_(Color.grey.alpha_(0.4));
-)
 
-k.centere
 (
 ~granny = {
 	arg in;
