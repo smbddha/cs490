@@ -215,18 +215,21 @@ w.front;
 	out
 };
 
+~freq_mul = 1.0;
 ~max_amp = 0.7;
+
+~samp = Wavetable.sineFill(1024, [1,0.5,0.25,0.5],[0,0,0.2,0.5]);
+~amp_rand = 0.05;
 
 ~ngendy2 = {
 	arg n_bpts, interpolate=\lin, min_freq=30, max_freq=1000, samp_rate = 48000,
 	f; // for testing shit
 
-	var samp;
-
 	/*
 	| Create sonic material for granular part
 	*/
-	samp = Wavetable.sineFill(1024, [1,0.5,0.25,0.5],[0,0,0.2,0.5]);
+
+	("INTERPOLATION: "++interpolate).postln;
 
 	Routine {
 
@@ -250,7 +253,7 @@ w.front;
 
 		mAmpRands = Array.fill(n_bpts, {Pgbrown.new(~max_amp * -1, ~max_amp, step: 0.025).asStream});
 		mDurRands = Array.fill(n_bpts, {Pgbrown.new(0.4, 0.7, step: 2).asStream});
-		mOffRands = Array.fill(n_bpts, {Pgbrown.new(0,1024, step: 5).asStream});
+		mOffRands = Array.fill(n_bpts, {Pgbrown.new(1, 1024, step: 5).asStream});
 
 		mAmps = Array.fill(n_bpts, {|i| mAmpRands[i].next });
 		mDurs = Array.fill(n_bpts, {|i| mDurRands[i].next });
@@ -263,6 +266,7 @@ w.front;
 		inf.do({
 			if (phase >= 1.0, // then move to the next point
 				{
+					var r;
 					phase = phase - 1.0;
 
 					// get the next amplitude
@@ -275,6 +279,8 @@ w.front;
 					index = (index+1).mod(n_bpts);
 
 					amp_next = mAmpRands[index].next;
+					//r = (~amp_rand.rand / 2).rand;
+					//amp_next = clip2(mAmps[index] + (r - (r/2)), ~max_amp);
 					mAmps[index] = amp_next;
 
 					// how to read through the grain envelope at the
@@ -291,7 +297,7 @@ w.front;
 					rate = mDurRands[index].next;
 					mDurs[index] = rate;
 
-					speed = max_freq - min_freq * rate + min_freq * (1 / samp_rate) * n_bpts;
+					speed = max_freq - min_freq * rate + min_freq * ~freq_mul * (1 / samp_rate) * n_bpts;
 
 					//["NEXT AMP: ", amp_next, "PHASE", phase, "SPEED", speed].postln;
 				}
@@ -317,8 +323,8 @@ w.front;
 				\gran, {
 					// granular interpolation (also linear too)
 					var a,an, x;
-					a = amp + (env[i_env] * samp[off]);
-					an = amp_next + (env_next[i_env_next] * samp[off_next]);
+					a = amp + (env[i_env] * ~samp[off]);
+					an = amp_next + (env_next[i_env_next] * ~samp[off_next]);
 					//amp_out = (1.0 - phase * a) + (phase * an)
 
 					x = 1 - (phase * pi).cos / 2;
@@ -344,44 +350,22 @@ w.front;
 }
 )
 
-Env.new(curve: \sin)[0.2];
-(pi).cos()
-(
-/* VISUALS FOR TESTING PURPOSES */
-var w, txt, size = 36;
-w = Window.new("Knobs", Rect(400,400,250,100)).front;
-w.acceptsMouseOver=true;
-w.view.decorator = FlowLayout(w.view.bounds).gap_(10 @ 10).margin_(10 @10);
-txt = StaticText(w, 200 @ 14);
-w.view.decorator.nextLine;
-
-k = Knob(w, size @ size);
-k.action = {arg v,x,y;  v.value.postln; txt.string_("value: " ++ v.value); };
-k.mouseOverAction = {|v| txt.string_("value: " ++ v.value); };
-
-j = Knob(w, size @ size);
-j.action = {arg v,x,y;  j.value.postln; txt.string_("value: " ++ v.value); };
-j.mouseOverAction = { txt.string_("value: " ++ j.value); };
-
-n = NumberBox(w, 100 @ 20);
-//n.setProperty(\boxColor,Color.grey(alpha:0.0));
-n.value = 0.0;
-
-)
 
 (
-~x = ~ngendy2.(22, interpolate: \gran);
+~x = ~ngendy2.(20, interpolate: \gran);
 )
 (
 ~w = ~x.asStream();
 ~w.reset;
 ~w.next
+
 )
 ~wave = 400000.collect({~w.next});
 ~wave.plot
 
-
+clip2(-0.1,0.7)
 (
+
 /* ------------------------------------------------------------------
  * |
  * | VISUAL TESTING PANEL
@@ -389,36 +373,113 @@ n.value = 0.0;
  * -----------------------------------------------------------------*/
 var k_size = 36;
 
-w = Window("ngendy testing", Rect(0, 0, 880, 540));
+~interpolation_val = \lin;
 
-k = Knob(w, k_size @ k_size);
+w = Window("ngendy testing", Rect(0, 0, 880, 540));
+w.view.decorator = FlowLayout(w.view.bounds, gap: 1@1);
+
+k = EZKnob(
+	w,
+	46 @ 74,
+	"freq",
+	ControlSpec.new(0.5, 2.0),
+	{|v,x,y| v.value.postln; ~freq_mul = v.value },
+	margin:2@2,
+	labelHeight:16
+);
+k.view.background_(Color.grey.alpha_(0.4));
+
+j = EZKnob(
+	w,
+	46 @ 74,
+	"rand1",
+	ControlSpec.new(0.025, 0.5),
+	{|v,x,y| v.value.postln; ~amp_rand = v.value },
+	margin:2@2,
+	labelHeight:16
+);
+j.view.background_(Color.grey.alpha_(0.4));
+
+l = EZKnob(
+	w,
+	46 @ 74,
+	"rand2",
+	ControlSpec.new(0.5, 2.0),
+	{|v,x,y| v.value.postln; ~freq_mul = v.value },
+	margin:2@2,
+	labelHeight:16
+);
+l.view.background_(Color.grey.alpha_(0.4));
+
+n = EZListView.new(
+	w,
+	102 @ 72,
+	"interpolation",
+	[
+		'linear'   -> { arg lo; ~interpolation_val = \lin;  },
+		'cosine'   -> { arg lo; ~interpolation_val = \cos;  },
+		'granular' -> { arg lo; ~interpolation_val = \gran; }
+	]
+);
+
+b = Button(w, Rect(20, 20, 80, 26))
+.states_([["play", Color.black, Color.red]])
+.action_({ arg butt, mod;
+	~run_gendy.(i_val: ~interpolation_val);
+});
 
 z = CompositeView(w, Rect(440, 10, 430, 250)).background_(Color.rand(0.7)).resize_(5);
 a = Plotter("plot", parent: z).value_([0, 1, 2, 3, 4].scramble * 100);
 w.front;
 
-r = Routine {
-	var gen;
+~run_gendy = {
+	arg i_val;
 
-	gen = ~ngendy2.(22,
-		interpolate: \gran,
-		f: { |wave|
-		"full wave".postln;
-		wave.postln;
-		if(wave.size > 0, {a.value_(wave)});
-	});
+	var rt;
+	rt = Routine {
+		var gen;
 
-	inf.do({
-		gen.next;
-		0.005.wait;
-	});
+		gen = ~ngendy2.(22,
+			interpolate: i_val,
+			f: { |wave|
+				"full wave".postln;
+				wave.postln;
+				if(wave.size > 0, {a.value_(wave)});
+		});
+
+		inf.do({
+			gen.next;
+			0.005.wait;
+		});
+	};
+	rt.play(AppClock);
 };
-
-r.play(AppClock);
 
 )
 
+(
+s.waitForBoot({
+    w = Window.new;
+    b = Button(w, Rect(20, 20, 80, 26))
+            .states_([["play", Color.black, Color.rand]])
+            .mouseDownAction_({
+                a = {EnvGen.kr(Env.adsr, doneAction: Done.freeSelf) * SinOsc.ar(440, 0, 0.4)}.play;
+            })
+            .action_({ arg butt, mod;
+                a.release(0.3);
+            });
+    w.front;
+})
+)
 
+(
+w = Window("EZKnob", Rect(380,400,300,180)).front;
+w.view.decorator = FlowLayout(w.view.bounds);
+k = EZKnob(w, 42 @ 74, "Knob", action: { arg knb; knb.value.postln; }, margin:2@2, labelHeight:16);
+k.view.background_(Color.grey.alpha_(0.4));
+)
+
+k.centere
 (
 ~granny = {
 	arg in;
@@ -442,15 +503,38 @@ r.play(AppClock);
 ~x = Pgbrown.new(0,1024, step:5, length:inf).asStream
 ~x.next
 
-~pg = Pgbrown.new(lo: 0, hi: 1, step: 0.525, length: inf);
-~pgs = ~pg.asStream;
-~pgs.next;
+
+~pg = Pgbrown.new(0.4, 0.7, step: 0.1).asStream;
+~pg.next;
+~pg.set
 
 ~wave.plot;
 ~wave.size
 
 {SinOsc.ar(440, mul: 0.2) + Line.ar(0,1,5)}.play;
 s.scope
+(
+// default with vertical layout
+w = Window.new.front;
+w.view.decorator = FlowLayout(w.view.bounds);
+g = EZListView.new(w,
+    230@230,
+    "An ListView:",
+    [
+        \item0 ->{ |a| ("this is item 0 of " ++ a).postln },
+        \item1 ->{ |a| ("this is item 1 of " ++ a).postln },
+        \item2 ->{ |a| ("this is item 2 of " ++ a).postln },
+    ],
+    globalAction: { |a| ("this is a global action of "++a.asString ).postln },
+    initVal: 2,
+    initAction: true,
+    labelWidth: 120,
+    labelHeight: 16,
+    layout: \vert,
+    gap: 2@2
+    );
+
+)
 
 (
 a = ~wave; // 5 seconds of noise
