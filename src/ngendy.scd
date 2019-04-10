@@ -503,18 +503,6 @@ w.front;
 };
 
 )
-(
-w = Window.new.front;
-g = EZNumber(w,        // parent
-             150@20,   // bounds
-             " test ", // label
-             \freq,    // controlSpec
-             { |ez| (ez.value.asString ++" is the value of " ++ ez).postln }, // action
-             330,      // initValue
-             true      // initAction
-);
-g.setColors(Color.grey,Color.white);
-);
 
 
 (
@@ -536,41 +524,6 @@ g.setColors(Color.grey,Color.white);
 
 	/* select breakpoints in the */
 };
-)
-~x = Pgbrown.new(0,1024, step:5, length:inf).asStream
-~x.next
-
-
-~pg = Pgbrown.new(0.4, 0.7, step: 0.1).asStream;
-~pg.next;
-~pg.set
-
-~wave.plot;
-~wave.size
-
-{SinOsc.ar(440, mul: 0.2) + Line.ar(0,1,5)}.play;
-s.scope
-(
-// default with vertical layout
-w = Window.new.front;
-w.view.decorator = FlowLayout(w.view.bounds);
-g = EZListView.new(w,
-    230@230,
-    "An ListView:",
-    [
-        \item0 ->{ |a| ("this is item 0 of " ++ a).postln },
-        \item1 ->{ |a| ("this is item 1 of " ++ a).postln },
-        \item2 ->{ |a| ("this is item 2 of " ++ a).postln },
-    ],
-    globalAction: { |a| ("this is a global action of "++a.asString ).postln },
-    initVal: 2,
-    initAction: true,
-    labelWidth: 120,
-    labelHeight: 16,
-    layout: \vert,
-    gap: 2@2
-    );
-
 )
 
 (
