@@ -25,5 +25,34 @@
 \maketitle
 
 \pagebreak
+\section{Abstract}
+
+\section{Background}
+The composer and early computer musician Iannis Xenakis drew heavily upon stochastic processes in the development of his unique musical styles and experiments. (Give examples of pieces / different methods of composition) In (TODO) and (TODO) stochastic functions are used to shape the macro-features of the pieces - (TODO). 
+
+\subsection{Dynamic Stochastic Synthesis}
+Xenakis implemented DSS in his 1971 GENDY program written in QBASIC. DSS directly synthesis a sound wave sample by sample. This is accomplished by maintaining a set of 'breakpoints,' each with an amplitude and duration value, which are interpolated together to synthesis a wave. Figure (TODO) describes the DSS in pseudocode. After each cycle, each breakpoint takes a step; its amplitude and duration values are altered by a random walk. 
+
+\subsection{Continued work}
+Since Xenakis first introduced DSS there have been several attempts to extend the method of synthesis. Nick Collins adapted Xenakis's DSS to the SuperCollider3 platform with his Gendy1, Gendy2, and Gendy3 UGens. While these implemenations don't extend the method of synthesis they do expose it to a greater user base on the SC3 platform. PHINGEN (TODO BY WHO) does by present a novel extension to DSS synthesis by using physical-modeling algorithms to influence the stepping of breakpoints and interpolation between breakpoints. (Mention Extended Dynamic Stochastic Synthesis, PHINGEN + NICK Collins super collider UGENS)
+
+\section{Extending Dynamic Stochastic Synthesis}
+To extend Xenakis DSS, I incorporated another synthesis type: granular synthesis. DSS generally utilizes linear interpolation to calculate samples in-between breakpoints. If a small number of breakpoints is used this can limit the complexity of produced sounds. Using novel granular synthesis interpolation method, I have introduced the ability to add micro-variations to the DSS wave. Either a simple sine wave, or single-carrier single-modulator fm sine wave synthesis is used as the the sonic matter for the granular synthesis. (TODO pseudocode of algorithm)
+
+\section{Implementation and Modules}
+There are many existing platforms and technologies for the development of DSP plugins: RackAFX, SuperCollider3, (find more). I chose to use a new platform, VCV Rack, which simulates modular synth hardware. VCV Rack was started in (TODO) by (TODO) and is a fully open-source program. Developers may create new modules for the platform by extending the (TODO change to code format:) exposed Module class. Unlike the SuperCollider3 UGen interface, samples are not generated in blocks, but each sample is generated individually. While this method of sample generation is less efficient, and less easily parallelized, it is more adherent to the modular synth paradigm.
+
+\subsection{GRANDY}
+The main module of the stochastic suite is the GRANDY module. Grandy is a generator module that implements my Granular Dynamic Stochastic Synthesis.
+
+\subsection{STITCHER}
+(TALK ABOUT SERGIO LUQUE) The STITCHER module contains four GRANDY oscillators, which can be controlled separately, or by a set of global parameter knobs.
+
+\subsection{GenECHO}
+The GenECHO is not a generator, but, nearly, an effects module. On a gate input, the module samples at input signal and proceeds to apply a 'stochastic decomposition' to the sampled wave. As did GRANDY, GenECHO maintains a number of breakpoints. The number of breakpoints is influenced by the length of the sample being 'echoed' and a controllable breakpoint-spacing parameter. As the wave is repeatedly looped through, each breakpoint applies an envelope with a stochastically-generated amplitude to the stored sample. Overtime the stored sample is increasingly morphed by the stochastic shifts causing new sounds to appear.
+
+\section{Results}
+
+\section{Acknowledgements}
 
 \end{document}
