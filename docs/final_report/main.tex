@@ -87,11 +87,12 @@ DSS and now GDSS are both generative processes using random walks to continually
 \begin{algorithm}\captionsetup{labelfont={sc,bf}, labelsep=newline}
 \caption{Stochastic Effect Algorithm}
     \begin{algorithmic}
-        \STATE $bpts\gets [\{amp,\ dur,\ off,\ grate\}]$
+        \STATE $bpts\gets [\{amp,\ dur\}]$
         \STATE $bpt\gets bpts[0]$
         \STATE $bpt\_next\gets None$
         \STATE $index\gets 0$
         \STATE $prob\_dist\gets UNIFORM$
+        \STATE $sample\gets [float]$
         \LOOP
             \IF{$phase >= 1.0$}
                 \STATE index++\\
@@ -112,7 +113,13 @@ There are many existing platforms and technologies for the development of DSP pl
 VCV Rack facilitates the development of new modules, or plugins, for the platform by exposing the \texttt{Model} class, which accepts \texttt{Module} and \texttt{ModuleWidget} structs. The \texttt{Module} struct is response for the plugins logic. The Rack engine calls \texttt{Module.step()} during each cycle. The \texttt{ModuleWidget} handles the UI for the module and specifies the type and location of controls for the panel. Each of the modules described below was implemented by extending the \texttt{Module} and \texttt{ModuleWidget} \texttt{structs} to create a new \texttt{Model}. All together, the modules are released as a package to the VCV Rack community under the name \texttt{StochKit}, short for Stochastic Toolkit.
 
 \subsection{GRANDY}
-The main module of the stochastic suite is the GRANDY module. GRANDY is a generator module that implements Granular Dynamic Stochastic Synthesis. Most parameters are exposed through knobs for the user to control. The module is modelled off of other Voltage Controlled Oscillator modules, so there is a knob to control the frequency of the produced wave, and the ability to modulate this set frequency through CV. The module allows switching between sine wave and fm sine wave granular synthesis. An important aspect of the module design was to enable to modulation of all parameters by an incoming CV.
+The main module of the stochastic suite is the GRANDY module. GRANDY is a generator module that implements Granular Dynamic Stochastic Synthesis. Most parameters are exposed through knobs for the user to control. The module is modelled off of other voltage controlled oscillator (VCO) modules, so there is a knob to control the frequency of the produced wave, and the ability to modulate this set frequency through CV. 
+
+\subsubsection{Controls}
+The two top-most nobs, \texttt{freq} and \texttt{bpts}, both may be used to control the pitch of the outcoming wave. The \texttt{freq} control is more predictable as it directly reduces the distance between each breakpoint to alter the pitch. The \texttt{bpts} control, however, alters the number of breakpoints that are used in the synthesis, consequently any change in the number of breakpoints causes a change in the length of a wave cycle and a change in pitch. The two knobs below, \texttt{astp} and \texttt{dstp}, control the maximum step an amplitude value and duration value may take during their respective random walks. Increasing the \texttt{astp} parameter causes the timbre of the produced sound to change more rapidly, as transients fade in and out. While increasing the \texttt{dstp} parameter causes duration values to vary more rapidly leading to a wave that oscillates around several main frequencies, never settling for long, since the wavelength is quickly changing. Each of these controls has accompanying inputs for control by CV and corresponding knobs for the attenuation of the input signals. Controls without CV inputs are the \texttt{pdst} switch, which toggles the used probability distribution between Uniform, Cauchy, and Arcsin distributions and the \texttt{mirr} switch that toggles between mirroring and wrapping at random walk bounds.
+
+\subsubsection{Granular Controls}
+There are two sets of control for the granular aspects of the GRANDY module. The user is able to toggle between sine wave or fm sine wave granular synthesis with a switch. Controls for the frequency sine wave granular synthesis are located above the divided line. The frequency of the sine wave is controllable by the \texttt{gfreq} knob and the corresponding CV input. The controls for fm sine waves, below the dividing line, entail knobs for the frequency of the carrier and modulator waves, and a knob for the index of modulation. 
 
 \begin{figure}
   \caption{The VCV Rack Grandy module.}
@@ -125,6 +132,10 @@ The STITCHER implements stochastic contatenation, as described by Luque, uses GR
 
 Luque describes the concatenation of stochastic waves as being another stochastically determined process, 'using tendency masks, or ...' (TODO).\citep{sergio2006} My implementation, instead, allows the user/musician control over this process. The number of wave cycles a single oscillator outputs before the next oscillator is used, and whether an oscillator is active in the synthesis at a given time are both parameters the user may control using the corresponding knobs.
 
+\subsubsection{Local Controls}
+
+\subsubsection{Global Controls}
+
 \begin{figure}
   \caption{The VCV Rack Stitcher module.}
   \centering
@@ -133,6 +144,9 @@ Luque describes the concatenation of stochastic waves as being another stochasti
 
 \subsection{GenECHO}
 The GenECHO, unlike the GRANDY and STITCHER modules, is not a generater, rather it is an effects module. On a gate input, the module samples an input signal and proceeds to apply a 'stochastic decomposition' to the sampled wave. GenECHO, like GRANDY, maintains a number of breakpoints. The number of breakpoints is influenced by the length of the sample being 'echoed' and a controllable breakpoint-spacing parameter. As the wave is repeatedly looped through, each breakpoint applies an envelope with a stochastically-generated amplitude to the stored sample. Over time the stored sample is increasingly morphed by the stochastic shifts causing new sounds to appear.
+
+\subsubsection{Controls}
+The section in the top left of GenECHO's panel handles the capturing of an input signal for effect application. The \texttt{l} knob effects the length of sample and the \texttt{i} input read in the sample upon receiving a gate to the \texttt{g} input.
 
 \begin{figure}
   \caption{The VCV Rack GenEcho module.}
